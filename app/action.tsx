@@ -9,16 +9,20 @@ import { ExperimentalMessage } from 'ai'
 import { Spinner } from '@/components/ui/spinner'
 import { Section } from '@/components/section'
 import { FollowupPanel } from '@/components/followup-panel'
-import { inquire, researcher, taskManager, querySuggestor } from '@/lib/agents'
+import {
+  researcher,
+  taskManager,
+  querySuggestor,
+  summarize
+} from '@/lib/agents'
 import { writer } from '@/lib/agents/writer'
 
-async function submit(formData?: FormData, skip?: boolean) {
+async function submit(formData?: FormData) {
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()
   const uiStream = createStreamableUI()
   const isGenerating = createStreamableValue(true)
-  const isCollapsed = createStreamableValue(false)
 
   const messages: ExperimentalMessage[] = aiState.get() as any
   const useSpecificAPI = process.env.USE_SPECIFIC_API_FOR_WRITER === 'true'
@@ -26,14 +30,7 @@ async function submit(formData?: FormData, skip?: boolean) {
   // Limit the number of messages to the maximum
   messages.splice(0, Math.max(messages.length - maxMessages, 0))
   // Get the user input from the form data
-  const userInput = skip
-    ? `{"action": "skip"}`
-    : (formData?.get('input') as string)
-  const content = skip
-    ? userInput
-    : formData
-    ? JSON.stringify(Object.fromEntries(formData))
-    : null
+  const content = formData?.get('input') as string
   // Add the user message to the state
   if (content) {
     const message = { role: 'user', content }
@@ -45,25 +42,8 @@ async function submit(formData?: FormData, skip?: boolean) {
     uiStream.update(<Spinner />)
 
     let action: any = { object: { next: 'proceed' } }
-    // If the user skips the task, we proceed to the search
-    if (!skip) action = (await taskManager(messages)) ?? action
 
-    if (action.object.next === 'inquire') {
-      // Generate inquiry
-      const inquiry = await inquire(uiStream, messages)
-
-      uiStream.done()
-      isGenerating.done()
-      isCollapsed.done(false)
-      aiState.done([
-        ...aiState.get(),
-        { role: 'assistant', content: `inquiry: ${inquiry?.question}` }
-      ])
-      return
-    }
-
-    // Set the collapsed state to true
-    isCollapsed.done(true)
+    console.log('action', action)
 
     //  Generate the answer
     let answer = ''
@@ -125,8 +105,7 @@ async function submit(formData?: FormData, skip?: boolean) {
   return {
     id: Date.now(),
     isGenerating: isGenerating.value,
-    component: uiStream.value,
-    isCollapsed: isCollapsed.value
+    component: uiStream.value
   }
 }
 
@@ -142,7 +121,6 @@ const initialAIState: {
 const initialUIState: {
   id: number
   isGenerating?: StreamableValue<boolean>
-  isCollapsed?: StreamableValue<boolean>
   component: React.ReactNode
 }[] = []
 
