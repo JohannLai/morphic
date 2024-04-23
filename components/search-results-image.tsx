@@ -22,7 +22,11 @@ import { useEffect, useState } from 'react'
 import { PlusCircle } from 'lucide-react'
 
 interface SearchResultsImageSectionProps {
-  images: string[]
+  images: {
+    imageUrl: string
+    title: string
+    link: string
+  }[]
   query?: string
 }
 
@@ -72,7 +76,7 @@ export const SearchResultsImageSection: React.FC<
                 <CardContent className="p-2 h-full w-full">
                   {image ? (
                     <img
-                      src={image}
+                      src={image.imageUrl}
                       alt={`Image ${index + 1}`}
                       className="h-full w-full object-cover"
                       onError={e =>
@@ -106,7 +110,7 @@ export const SearchResultsImageSection: React.FC<
                     <CarouselItem key={idx}>
                       <div className="p-1 flex items-center justify-center h-full">
                         <img
-                          src={img}
+                          src={img.imageUrl}
                           alt={`Image ${idx + 1}`}
                           className="h-auto w-full object-contain max-h-[60vh]"
                           onError={e =>

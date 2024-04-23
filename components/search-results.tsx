@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 export interface SearchResultsProps {
-  results: { title: string; url: string; content: string }[]
+  results: { title: string; link: string; snippet: string }[]
 }
 
 export function SearchResults({ results }: SearchResultsProps) {
@@ -25,24 +25,24 @@ export function SearchResults({ results }: SearchResultsProps) {
     <div className="flex flex-wrap">
       {displayedResults.map((result: any, index: any) => (
         <div className="w-1/2 md:w-1/4 p-1" key={index}>
-          <Link href={result.url} passHref target="_blank">
+          <Link href={result.link} passHref target="_blank">
             <Card className="flex-1">
               <CardContent className="p-2">
-                <p className="text-xs line-clamp-2">{result.content}</p>
+                <p className="text-xs line-clamp-2">{result.snippet}</p>
                 <div className="mt-2 flex items-center space-x-2">
                   <Avatar className="h-4 w-4">
                     <AvatarImage
                       src={`https://www.google.com/s2/favicons?domain=${
-                        new URL(result.url).hostname
+                        new URL(result.link).hostname
                       }`}
-                      alt={result.author}
+                      alt={result.title}
                     />
                     <AvatarFallback>
-                      {new URL(result.url).hostname[0]}
+                      {new URL(result.link).hostname[0]}
                     </AvatarFallback>
                   </Avatar>
                   <div className="text-xs opacity-60 truncate">
-                    {new URL(result.url).hostname}
+                    {new URL(result.link).hostname}
                   </div>
                 </div>
               </CardContent>

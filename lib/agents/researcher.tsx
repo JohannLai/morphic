@@ -46,7 +46,9 @@ export async function researcher(
     If there are any images relevant to your answer, be sure to include them as well.
     Aim to directly address the user's question, augmenting your response with insights gleaned from the search results.
     Whenever quoting or referencing information from a specific URL, always cite the source URL explicitly.
-    Please match the language of the response to the user's language.`,
+    Please match the language of the response to the user's language.
+    Please highlight the important part using markdown according to the **snippetHighlighted** field in the search results.
+    `,
     messages,
     tools: {
       search: {
@@ -78,10 +80,11 @@ export async function researcher(
             query.length < 5 ? query + ' '.repeat(5 - query.length) : query
           let searchResult
           try {
-            searchResult =
-              searchAPI === 'tavily'
-                ? await tavilySearch(filledQuery, max_results, search_depth)
-                : await exaSearch(query)
+            searchResult = await hermGoSearch(filledQuery)
+            // searchResult =
+            //   searchAPI === 'tavily'
+            //     ? await tavilySearch(filledQuery, max_results, search_depth)
+            //     : await exaSearch(query)
           } catch (error) {
             console.error('Search API error:', error)
             hasError = true
@@ -101,13 +104,13 @@ export async function researcher(
             <Section title="Images">
               <SearchResultsImageSection
                 images={searchResult.images}
-                query={searchResult.query}
+                query={filledQuery}
               />
             </Section>
           )
           uiStream.append(
             <Section title="Sources">
-              <SearchResults results={searchResult.results} />
+              <SearchResults results={searchResult.organic} />
             </Section>
           )
 
@@ -161,6 +164,28 @@ export async function researcher(
   }
 
   return { result, fullResponse, hasError, toolResponses }
+}
+
+async function hermGoSearch(query: string) {
+  const response = await fetch(
+    `https://hermgo-api.vercel.app/api/search?q=${query}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error(`hermgo Error: ${response.status}`)
+  }
+
+  const { data } = await response.json()
+
+  console.log('hermgo data:', data)
+
+  return data
 }
 
 async function tavilySearch(
